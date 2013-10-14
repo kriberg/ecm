@@ -21,6 +21,7 @@ __date__ = "2010-03-23"
 __author__ = "diabeteman"
 
 import logging
+from datetime import datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -50,8 +51,10 @@ def update():
     apiAssets = api_conn.corp.AssetList(characterID=api.get_charID())
     api.check_version(apiAssets._meta.version)
 
-    currentTime = timezone.make_aware(apiAssets._meta.currentTime, timezone.utc)
-    cachedUntil = timezone.make_aware(apiAssets._meta.cachedUntil, timezone.utc)
+    currentTime = timezone.make_aware(datetime.utcfromtimestamp( \
+            apiAssets._meta.currentTime), timezone.utc)
+    cachedUntil = timezone.make_aware(datetime.utcfromtimestamp( \
+            apiAssets._meta.cachedUntil), timezone.utc)
     LOG.debug("current time : %s", str(currentTime))
     LOG.debug("cached util : %s", str(cachedUntil))
 

@@ -18,6 +18,8 @@
 __date__ = "2012-04-26"
 __author__ = "ajurna"
 
+from datetime import datetime
+
 from django.db import transaction
 from django.utils import timezone
 
@@ -39,7 +41,8 @@ def update():
     api_conn = api.connect()
     corpApi = api_conn.corp.ContactList(characterID=api.get_charID())
     api.check_version(corpApi._meta.version)
-    currentTime = timezone.make_aware(corpApi._meta.currentTime, timezone.utc)
+    currentTime = timezone.make_aware(datetime.utcfromtimestamp( \
+            corpApi._meta.currentTime), timezone.utc)
     
     my_corp = Corporation.objects.mine()
     
@@ -54,7 +57,7 @@ def update():
                                 value=contact.standing,
                                 )
     
-    for contact in corpApi.allianceContactList: 
+    for contact in corpApi.allianceContactList:
         Standing.objects.create(corp=my_corp,
                                 contactID=contact.contactID,
                                 is_corp_contact=False,
