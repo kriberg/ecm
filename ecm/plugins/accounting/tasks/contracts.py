@@ -20,6 +20,7 @@ __author__ = "tash"
 
 
 import logging
+from datetime import datetime
 
 from django.db import transaction
 from django.utils import timezone
@@ -43,12 +44,14 @@ def update():
     LOG.debug("Fetching Contracts...")
     contractsApi = api_conn.corp.Contracts()
 
-    current_time = timezone.make_aware(contractsApi._meta.currentTime, timezone.utc)
-    cached_until = timezone.make_aware(contractsApi._meta.cachedUntil, timezone.utc)
+    current_time = timezone.make_aware(datetime.utcfromtimestamp( \
+            contractsApi._meta.currentTime), timezone.utc)
+    cached_until = timezone.make_aware(datetime.utcfromtimestamp( \
+            contractsApi._meta.cachedUntil), timezone.utc)
     LOG.debug("current time : %s", str(current_time))
     LOG.debug("cached util : %s", str(cached_until))
     LOG.debug("parsing api response...")
-    
+
     process_contracts(contractsApi.contractList, api_conn)
     UpdateDate.mark_updated(model=Contract, date=timezone.now())
 
@@ -61,27 +64,27 @@ def process_contracts(contract_list, connection):
         alliance_id = Corporation.objects.mine().alliance.allianceID
     except AttributeError:
         alliance_id = 0
-    LOG.debug("Fetching contracts from DB...")    
+    LOG.debug("Fetching contracts from DB...")
     # Get old contracts
     old_contracts = {}
     for contract in Contract.objects.all():
         old_contracts[contract] = contract
     LOG.debug("%s contracts found in DB..." % len(old_contracts))
-    
+
     # Get new contracts
-    LOG.debug("Fetching contracts from API...")   
+    LOG.debug("Fetching contracts from API...")
     new_contracts = {}
     for entry in contract_list:
         if entry.assigneeID != alliance_id:
             contract = populate_contract(entry)
             new_contracts[contract] = contract
-    
+
     # Get changes
     removed_contracts, added_contracts = tools.diff(old_items=old_contracts, new_items=new_contracts)
     LOG.debug("Contracts from API: %s" % len(new_contracts))
     LOG.debug("Removed contracts: %s" % len(removed_contracts))
     LOG.debug("Added contracts: %s" % len(added_contracts))
-    
+
     # Query the contract items
     old_items = {}
     for item in ContractItem.objects.all():
@@ -101,6 +104,9 @@ def process_contracts(contract_list, connection):
                     new_items[new_item] = new_item
             except api.RequestError:
                 LOG.debug("Invalid or missing contractID: %s" % contract.contractID)
+                continue
+            except api.ServerError:
+                LOG.debug("Error while examining contractID:%s" % contract.contractID)
                 continue
     # Get all contractitem ids for removed contracts
     removed_items = []
