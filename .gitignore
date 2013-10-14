@@ -1,0 +1,20 @@
+syntax: glob
+*.pyc
+*.pyo
+*.mo
+*.old
+*.log
+*.orig
+*.swp
+*.egg-info
+*~
+
+.metadata
+dist
+build
+.pydevproject
+
+.idea/*
+syntax: regexp
+^\.settings/org\.eclipse\.mylyn\.tasks\.ui\.prefs$
+
